@@ -1,7 +1,6 @@
 import { redirect } from 'next/navigation'
 
-import { DashboardView } from '@/components/dashboard-view'
-import { LogoutButton } from '@/components/logout-button'
+import { EmbeddedDashboardView } from '@/components/embedded-dashboard-view'
 import { createClient } from '@/lib/supabase/server'
 
 export default async function ProtectedPage() {
@@ -12,15 +11,12 @@ export default async function ProtectedPage() {
     redirect('/auth/login')
   }
 
-  return (
-    <div className="min-h-svh w-full p-6">
-      <div className="mb-6 flex items-center justify-between">
-        <p className="text-sm text-muted-foreground">
-          Logged in as <span className="font-medium text-foreground">{data.claims.email}</span>
-        </p>
-        <LogoutButton />
-      </div>
-      <DashboardView />
-    </div>
-  )
+  const userEmail = data.claims.email ?? 'No email'
+  const userName =
+    data.claims.user_metadata?.full_name ??
+    data.claims.user_metadata?.name ??
+    userEmail.split('@')[0] ??
+    'User'
+
+  return <EmbeddedDashboardView userName={userName} userEmail={userEmail} />
 }

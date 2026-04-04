@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { Sidebar } from '@/components/sidebar';
 import { DashboardView } from '@/components/dashboard-view';
 import { createClient } from '@/lib/supabase/client';
+import { WeeklyView } from '@/components/WeeklyView';
 
 export default function App() {
   const [activeView, setActiveView] = useState('dashboard');
@@ -35,6 +36,7 @@ export default function App() {
       case 'dashboard':
         return <DashboardView />;
       case 'weekly':
+        return<WeeklyView/>;
       case 'goals':
       case 'logs':
       case 'settings':

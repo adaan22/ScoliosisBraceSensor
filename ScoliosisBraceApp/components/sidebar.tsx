@@ -18,7 +18,7 @@ const menuItems = [
 
 export function Sidebar({ activeView, onViewChange, userName, userEmail }: SidebarProps) {
   return (
-    <div className="w-64 h-screen bg-[#00487C] text-white p-6 flex flex-col fixed left-0 top-0">
+    <div className="fixed left-0 top-14 flex h-[calc(100vh-3.5rem)] w-64 flex-col bg-[#00487C] p-6 text-white">
       <div className="mb-8">
         <h1 className="text-2xl font-bold">Brace Monitor</h1>
         <p className="text-sm text-white/70 mt-1">Treatment Dashboard</p>

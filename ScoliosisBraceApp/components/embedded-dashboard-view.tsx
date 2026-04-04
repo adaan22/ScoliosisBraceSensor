@@ -30,7 +30,7 @@ export function EmbeddedDashboardView({ userName, userEmail }: EmbeddedDashboard
   };
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-[calc(100vh-3.5rem)] bg-white">
       <Sidebar
         activeView={activeView}
         onViewChange={setActiveView}

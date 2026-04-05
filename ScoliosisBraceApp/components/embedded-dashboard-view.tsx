@@ -3,6 +3,7 @@
 import { useState } from 'react';
 
 import { DashboardView } from '@/components/dashboard-view';
+import { LogsView } from '@/components/logs-view';
 import { LogoutButton } from '@/components/logout-button';
 import { Sidebar } from '@/components/sidebar';
 import { WeeklyView } from '@/components/WeeklyView';
@@ -22,7 +23,9 @@ export function EmbeddedDashboardView({ userName, userEmail }: EmbeddedDashboard
       case 'weekly':
         return <WeeklyView />;
       case 'goals':
+        return <DashboardView />;
       case 'logs':
+        return <LogsView />;
       case 'settings':
       default:
         return <DashboardView />;

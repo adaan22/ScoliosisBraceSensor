@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { Sidebar } from '@/components/sidebar';
 import { DashboardView } from '@/components/dashboard-view';
 import { createClient } from '@/lib/supabase/client';
+import { LogsView } from '@/components/logs-view';
 import { WeeklyView } from '@/components/WeeklyView';
 
 export default function App() {
@@ -38,7 +39,9 @@ export default function App() {
       case 'weekly':
         return<WeeklyView/>;
       case 'goals':
+        return <DashboardView />;
       case 'logs':
+        return <LogsView />;
       case 'settings':
       default:
         return <DashboardView />;

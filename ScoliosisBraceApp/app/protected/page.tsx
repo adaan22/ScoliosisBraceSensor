@@ -6,17 +6,23 @@ import { createClient } from '@/lib/supabase/server'
 export default async function ProtectedPage() {
   const supabase = await createClient()
 
-  const { data, error } = await supabase.auth.getClaims()
-  if (error || !data?.claims) {
+  const {
+    data: { user },
+    error,
+  } = await supabase.auth.getUser()
+  if (error || !user) {
     redirect('/auth/login')
   }
 
-  const userEmail = data.claims.email ?? 'No email'
+  const userEmail = user.email ?? 'No email'
   const userName =
-    data.claims.user_metadata?.full_name ??
-    data.claims.user_metadata?.name ??
+    (user.user_metadata?.full_name as string | undefined) ??
+    (user.user_metadata?.name as string | undefined) ??
     userEmail.split('@')[0] ??
     'User'
 
-  return <EmbeddedDashboardView userName={userName} userEmail={userEmail} />
+  const adminId = process.env.ADMIN_ID ?? ''
+  const isAdmin = Boolean(adminId && user.id === adminId)
+
+  return <EmbeddedDashboardView userName={userName} userEmail={userEmail} isAdmin={isAdmin} />
 }

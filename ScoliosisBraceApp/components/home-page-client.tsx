@@ -1,22 +1,44 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 
 import { DashboardView } from '@/components/dashboard-view';
 import { LogsView } from '@/components/logs-view';
-import { LogoutButton } from '@/components/logout-button';
 import { PatientsView } from '@/components/PatientsView';
 import { Sidebar } from '@/components/sidebar';
 import { WeeklyView } from '@/components/WeeklyView';
+import { createClient } from '@/lib/supabase/client';
 
-interface EmbeddedDashboardViewProps {
-  userName: string;
-  userEmail: string;
-  isAdmin?: boolean;
+interface HomePageClientProps {
+  isAdmin: boolean;
+  initialUserName: string;
+  initialUserEmail: string;
 }
 
-export function EmbeddedDashboardView({ userName, userEmail, isAdmin = false }: EmbeddedDashboardViewProps) {
+export function HomePageClient({ isAdmin, initialUserName, initialUserEmail }: HomePageClientProps) {
   const [activeView, setActiveView] = useState(isAdmin ? 'patients' : 'dashboard');
+  const [userName, setUserName] = useState(initialUserName);
+  const [userEmail, setUserEmail] = useState(initialUserEmail);
+
+  useEffect(() => {
+    const loadUser = async () => {
+      const supabase = createClient();
+      const { data } = await supabase.auth.getUser();
+      const user = data.user;
+
+      if (!user) return;
+
+      const metadataName =
+        (user.user_metadata?.full_name as string | undefined) ||
+        (user.user_metadata?.name as string | undefined);
+      const derivedName = metadataName ?? user.email?.split('@')[0] ?? 'User';
+
+      setUserName(derivedName);
+      setUserEmail(user.email ?? 'No email');
+    };
+
+    void loadUser();
+  }, []);
 
   const renderView = () => {
     if (isAdmin) {
@@ -48,10 +70,7 @@ export function EmbeddedDashboardView({ userName, userEmail, isAdmin = false }: 
         userEmail={userEmail}
       />
       <div className="ml-64 p-8">
-        <div className="mb-6 flex justify-end">
-          <LogoutButton />
-        </div>
-        <div className="max-w-[1400px]">{renderView()}</div>
+        <div className="mx-auto max-w-[1400px]">{renderView()}</div>
       </div>
     </div>
   );

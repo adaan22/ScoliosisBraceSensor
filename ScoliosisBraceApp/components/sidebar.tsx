@@ -1,14 +1,15 @@
-import { Home, TrendingUp, Settings, AlertCircle, Target, FileText } from 'lucide-react';
+import { Home, TrendingUp, Settings, AlertCircle, Target, FileText, Users } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface SidebarProps {
+  mode?: 'default' | 'admin';
   activeView: string;
   onViewChange: (view: string) => void;
   userName?: string;
   userEmail?: string;
 }
 
-const menuItems = [
+const defaultMenuItems = [
   { id: 'dashboard', icon: Home, label: 'Dashboard' },
   { id: 'weekly', icon: TrendingUp, label: 'Weekly Analysis' },
   { id: 'goals', icon: Target, label: 'Goals' },
@@ -16,12 +17,24 @@ const menuItems = [
   { id: 'settings', icon: Settings, label: 'Settings' },
 ];
 
-export function Sidebar({ activeView, onViewChange, userName, userEmail }: SidebarProps) {
+const adminMenuItems = [{ id: 'patients', icon: Users, label: 'Patients' }];
+
+export function Sidebar({
+  mode = 'default',
+  activeView,
+  onViewChange,
+  userName,
+  userEmail,
+}: SidebarProps) {
+  const menuItems = mode === 'admin' ? adminMenuItems : defaultMenuItems;
+
   return (
     <div className="fixed left-0 top-14 flex h-[calc(100vh-3.5rem)] w-64 flex-col bg-[#00487C] p-6 text-white">
       <div className="mb-8">
         <h1 className="text-2xl font-bold">Brace Monitor</h1>
-        <p className="text-sm text-white/70 mt-1">Treatment Dashboard</p>
+        <p className="text-sm text-white/70 mt-1">
+          {mode === 'admin' ? 'Admin — Patient roster' : 'Treatment Dashboard'}
+        </p>
       </div>
 
       <nav className="flex-1 space-y-2">

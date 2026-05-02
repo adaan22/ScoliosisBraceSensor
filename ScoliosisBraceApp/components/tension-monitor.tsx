@@ -2,8 +2,13 @@ import { Card } from './ui/card';
 import { Badge } from './ui/badge';
 import { AlertCircle, CheckCircle } from 'lucide-react';
 
-export function TensionMonitor() {
-  const currentTension = 32;
+interface TensionMonitorProps {
+  currentTension: number;
+  sampleCount: number;
+  isConnected: boolean;
+}
+
+export function TensionMonitor({ currentTension, sampleCount, isConnected }: TensionMonitorProps) {
   const recommendedMin = 25;
   const recommendedMax = 35;
   const isInRange = currentTension >= recommendedMin && currentTension <= recommendedMax;
@@ -12,9 +17,9 @@ export function TensionMonitor() {
     <Card className="p-6">
       <div className="flex items-center justify-between mb-4">
         <h3 className="font-medium text-[#00487C]">Tension Level</h3>
-        <Badge 
-          variant={isInRange ? "default" : "destructive"}
-          className={isInRange ? "bg-green-500" : ""}
+        <Badge
+          variant={isInRange ? 'default' : 'destructive'}
+          className={isInRange ? 'bg-green-500' : ''}
         >
           {isInRange ? (
             <><CheckCircle className="w-3 h-3 mr-1" /> Optimal</>
@@ -26,14 +31,17 @@ export function TensionMonitor() {
 
       <div className="space-y-4">
         <div className="text-center py-4">
-          <p className="text-5xl font-bold text-[#00487C]">{currentTension}</p>
-          <p className="text-sm text-[#00487C]/60 mt-1">Current Tension</p>
+          <p className="text-5xl font-bold text-[#00487C]">{currentTension.toFixed(1)}</p>
+          <p className="text-sm text-[#00487C]/60 mt-1">Average Tension</p>
+          <p className="text-xs text-[#00487C]/50 mt-1">
+            {isConnected ? 'Live feed connected' : 'Waiting for live feed'} - {sampleCount} samples
+          </p>
         </div>
 
         <div className="relative h-4 bg-gradient-to-r from-red-200 via-green-200 to-red-200 rounded-full">
-          <div 
+          <div
             className="absolute top-1/2 -translate-y-1/2 w-1 h-8 bg-[#00487C] rounded-full shadow-lg"
-            style={{ left: `${(currentTension / 50) * 100}%` }}
+            style={{ left: `${Math.min(100, Math.max(0, (currentTension / 50) * 100))}%` }}
           />
         </div>
 

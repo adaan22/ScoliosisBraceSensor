@@ -1,67 +1,61 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { Clock, Target, TrendingUp, Zap } from 'lucide-react';
 
-import { StatCard } from './stat-card';
 import { ActiveTimer } from './active-timer';
-import { TensionMonitor } from './tension-monitor';
 import { DailySummary } from './daily-summary';
 import { Recommendations } from './recommendations';
-import { Clock, Zap, TrendingUp, Target } from 'lucide-react';
+import { StatCard } from './stat-card';
+import { TensionMonitor } from './tension-monitor';
+import { createClient } from '@/lib/supabase/client';
+import { parseTensionMessage } from '@/lib/parse-tension-message';
 
 const TENSION_WS_URL = process.env.NEXT_PUBLIC_TENSION_WS_URL ?? 'ws://192.168.137.193/ws';
+const PERSIST_INTERVAL_MS = 2000;
 
-function getTensionValue(payload: unknown): number | null {
-  if (typeof payload === 'number' && Number.isFinite(payload)) {
-    return payload;
+async function saveTensionReading(time: string, tensionValue: number) {
+  const supabase = createClient();
+  const {
+    data: { session },
+  } = await supabase.auth.getSession();
+
+  if (!session?.access_token) {
+    return;
   }
 
-  if (typeof payload === 'object' && payload !== null) {
-    const possibleKeys = ['tension', 'value', 'reading', 'sensor', 'data'];
-    for (const key of possibleKeys) {
-      const nested = (payload as Record<string, unknown>)[key];
-      const parsed = getTensionValue(nested);
-      if (parsed !== null) {
-        return parsed;
-      }
-    }
+  const res = await fetch('/api/tension-readings', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${session.access_token}`,
+    },
+    body: JSON.stringify({ time, tension_value: tensionValue }),
+  });
+
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    console.error('Failed to save tension reading:', err);
   }
-
-  if (typeof payload === 'string') {
-    try {
-      const parsedJson = JSON.parse(payload);
-      const jsonValue = getTensionValue(parsedJson);
-      if (jsonValue !== null) {
-        return jsonValue;
-      }
-    } catch {
-      // Non-JSON string from device; fall back to number extraction.
-    }
-
-    const match = payload.match(/-?\d+(\.\d+)?/);
-    if (match) {
-      const numeric = Number(match[0]);
-      return Number.isFinite(numeric) ? numeric : null;
-    }
-  }
-
-  return null;
 }
 
 export function DashboardView() {
   const [samples, setSamples] = useState<number[]>([]);
   const [isConnected, setIsConnected] = useState(false);
+  const lastPersistAt = useRef(0);
 
   useEffect(() => {
     let socket: WebSocket | null = null;
     let reconnectTimer: number | undefined;
     let cancelled = false;
+    let sessionStart = new Date();
 
     const connect = () => {
       if (cancelled) {
         return;
       }
 
+      sessionStart = new Date();
       socket = new WebSocket(TENSION_WS_URL);
 
       socket.onopen = () => {
@@ -69,15 +63,22 @@ export function DashboardView() {
       };
 
       socket.onmessage = (event) => {
-        const reading = getTensionValue(event.data);
-        if (reading === null) {
+        const raw = typeof event.data === 'string' ? event.data : String(event.data);
+        const parsed = parseTensionMessage(raw, sessionStart);
+        if (!parsed) {
           return;
         }
 
         setSamples((prev) => {
-          const next = [...prev, reading];
+          const next = [...prev, parsed.tensionValue];
           return next.length > 200 ? next.slice(next.length - 200) : next;
         });
+
+        const now = Date.now();
+        if (now - lastPersistAt.current >= PERSIST_INTERVAL_MS) {
+          lastPersistAt.current = now;
+          void saveTensionReading(parsed.time, parsed.tensionValue);
+        }
       };
 
       socket.onerror = () => {
@@ -116,19 +117,22 @@ export function DashboardView() {
 
   return (
     <div className="space-y-6">
-      {/* Quick Stats Row */}
       <div className="grid grid-cols-4 gap-6">
         <StatCard
           title="Today's Wear Time"
           value="6.5h"
           subtitle="of 10h goal"
           icon={Clock}
-          trend={{ value: "+0.5h from yesterday", positive: true }}
+          trend={{ value: '+0.5h from yesterday', positive: true }}
         />
         <StatCard
           title="Current Tension"
           value={averageTension.toFixed(1)}
-          subtitle={samples.length > 0 ? `Avg from ${samples.length} readings` : 'Waiting for live feed'}
+          subtitle={
+            samples.length > 0
+              ? `Live avg · ${samples.length} samples (saved to your account)`
+              : 'Waiting for live feed — sign in to save readings'
+          }
           icon={Zap}
         />
         <StatCard
@@ -136,18 +140,17 @@ export function DashboardView() {
           value="8.2h"
           subtitle="per day"
           icon={TrendingUp}
-          trend={{ value: "+12% from last week", positive: true }}
+          trend={{ value: '+12% from last week', positive: true }}
         />
         <StatCard
           title="Compliance Rate"
           value="95%"
           subtitle="Last 7 days"
           icon={Target}
-          trend={{ value: "+5% improvement", positive: true }}
+          trend={{ value: '+5% improvement', positive: true }}
         />
       </div>
 
-      {/* Main Content Grid */}
       <div className="grid grid-cols-3 gap-6">
         <div className="col-span-2 space-y-6">
           <DailySummary />

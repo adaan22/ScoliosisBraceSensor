@@ -21,19 +21,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-
-interface Patient {
-  id: string;
-  name: string;
-  lastSync: string;
-  wearTimeToday: number;
-  wearTimeWeekly: number;
-  avgTension: number;
-  tensionStatus: 'optimal' | 'warning' | 'alert';
-  complianceRate: number;
-  activeAlerts: number;
-  weeklyTrend: 'up' | 'down' | 'stable';
-}
+import { type Patient } from '@/lib/test-data';
 
 interface PatientDetailModalProps {
   patient: Patient | null;

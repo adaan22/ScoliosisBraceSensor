@@ -2,9 +2,17 @@ import { Card } from './ui/card';
 import { Progress } from './ui/progress';
 import { Clock, Target } from 'lucide-react';
 
-export function ActiveTimer() {
-  const hoursWornToday = 6.5;
-  const dailyGoal = 10;
+import { dashboardTestData } from '@/lib/test-data';
+
+interface ActiveTimerProps {
+  hoursWornToday?: number;
+  dailyGoal?: number;
+}
+
+export function ActiveTimer({
+  hoursWornToday = dashboardTestData.wearTimeToday,
+  dailyGoal = dashboardTestData.dailyWearGoal,
+}: ActiveTimerProps) {
   const timeRemaining = dailyGoal - hoursWornToday;
   const progressPercentage = (hoursWornToday / dailyGoal) * 100;
 

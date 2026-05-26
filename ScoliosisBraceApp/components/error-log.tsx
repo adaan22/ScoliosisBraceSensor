@@ -6,14 +6,13 @@ import { Badge } from './ui/badge';
 import { Card } from './ui/card';
 import { ScrollArea } from './ui/scroll-area';
 
-const logs = [
-  { id: 1, timestamp: '2026-03-22 14:32', type: 'warning', message: 'Tension sensor reading spike detected (45 -> 12)' },
-  { id: 2, timestamp: '2026-03-22 12:15', type: 'info', message: 'Device reconnected successfully' },
-  { id: 3, timestamp: '2026-03-22 09:44', type: 'warning', message: 'Bluetooth connection lost for 2 minutes' },
-  { id: 4, timestamp: '2026-03-21 18:23', type: 'info', message: 'Daily sync completed' },
-];
+import { systemLogs, type SystemLog } from '@/lib/test-data';
 
-export function ErrorLog() {
+interface ErrorLogProps {
+  logs?: SystemLog[];
+}
+
+export function ErrorLog({ logs = systemLogs }: ErrorLogProps) {
   return (
     <Card className="p-6">
       <div className="mb-4 flex items-center justify-between">

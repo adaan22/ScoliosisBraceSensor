@@ -1,4 +1,5 @@
 import { HomePageClient } from '@/components/home-page-client';
+import { isAdminUser } from '@/lib/app-config';
 import { createClient } from '@/lib/supabase/server';
 
 export default async function Page() {
@@ -7,8 +8,7 @@ export default async function Page() {
     data: { user },
   } = await supabase.auth.getUser();
 
-  const adminId = process.env.ADMIN_ID ?? '';
-  const isAdmin = Boolean(user && adminId && user.id === adminId);
+  const isAdmin = isAdminUser(user?.id);
 
   const userEmail = user?.email ?? 'No email';
   const metadataName = user?.user_metadata?.full_name ?? user?.user_metadata?.name;

@@ -1,6 +1,7 @@
 import { redirect } from 'next/navigation'
 
 import { EmbeddedDashboardView } from '@/components/embedded-dashboard-view'
+import { appRoutes, isAdminUser } from '@/lib/app-config'
 import { createClient } from '@/lib/supabase/server'
 
 export default async function ProtectedPage() {
@@ -11,7 +12,7 @@ export default async function ProtectedPage() {
     error,
   } = await supabase.auth.getUser()
   if (error || !user) {
-    redirect('/auth/login')
+    redirect(appRoutes.login)
   }
 
   const userEmail = user.email ?? 'No email'
@@ -21,8 +22,7 @@ export default async function ProtectedPage() {
     userEmail.split('@')[0] ??
     'User'
 
-  const adminId = process.env.ADMIN_ID ?? ''
-  const isAdmin = Boolean(adminId && user.id === adminId)
+  const isAdmin = isAdminUser(user.id)
 
   return <EmbeddedDashboardView userName={userName} userEmail={userEmail} isAdmin={isAdmin} />
 }

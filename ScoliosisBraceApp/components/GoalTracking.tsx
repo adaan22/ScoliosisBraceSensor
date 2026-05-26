@@ -4,6 +4,7 @@ import { Target, Trophy } from 'lucide-react';
 
 import { Card } from './ui/card';
 import { Progress } from './ui/progress';
+import { dashboardTestData } from '@/lib/test-data';
 
 interface GoalTrackingProps {
   wearTimeToday?: number;
@@ -12,11 +13,11 @@ interface GoalTrackingProps {
 }
 
 export function GoalTracking({
-  wearTimeToday = 6.5,
-  wearTimeWeekly = 42,
-  complianceRate = 85,
+  wearTimeToday = dashboardTestData.wearTimeToday,
+  wearTimeWeekly = dashboardTestData.weeklyAverageHours * 7,
+  complianceRate = dashboardTestData.complianceRate,
 }: GoalTrackingProps) {
-  const dailyWearTarget = 10;
+  const dailyWearTarget = dashboardTestData.dailyWearGoal;
   const weeklyHoursTarget = 56;
 
   const goals = [

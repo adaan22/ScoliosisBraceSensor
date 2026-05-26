@@ -3,6 +3,8 @@
 import { useRouter } from 'next/navigation'
 import { useState } from 'react'
 
+import { appRoutes, getAuthRedirectUrl } from '@/lib/app-config'
+import { getAuthErrorMessage } from '@/lib/auth-errors'
 import { cn } from '@/lib/utils'
 import { createClient } from '@/lib/supabase/client'
 import { Button } from '@/components/ui/button'
@@ -42,13 +44,13 @@ export function SignUpForm({ className, ...props }: React.ComponentPropsWithoutR
         email,
         password,
         options: {
-          emailRedirectTo: `${window.location.origin}/protected`,
+          emailRedirectTo: getAuthRedirectUrl(appRoutes.protected),
         },
       })
       if (error) throw error
-      router.push('/auth/sign-up-success')
+      router.push(appRoutes.signUpSuccess)
     } catch (error: unknown) {
-      setError(error instanceof Error ? error.message : 'An error occurred')
+      setError(getAuthErrorMessage(error))
     } finally {
       setIsLoading(false)
     }
@@ -106,7 +108,7 @@ export function SignUpForm({ className, ...props }: React.ComponentPropsWithoutR
             </div>
             <div className="mt-4 text-center text-sm">
               Already have an account?{' '}
-              <Link href="/auth/login" className="underline underline-offset-4">
+              <Link href={appRoutes.login} className="underline underline-offset-4">
                 Login
               </Link>
             </div>

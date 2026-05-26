@@ -2,27 +2,16 @@ import { Card } from './ui/card';
 import { WeeklyComparison } from './WeeklyComparison';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, LineChart, Line } from 'recharts';
 
-const complianceData = [
-  { day: 'Mon', compliance: 92 },
-  { day: 'Tue', compliance: 95 },
-  { day: 'Wed', compliance: 98 },
-  { day: 'Thu', compliance: 90 },
-  { day: 'Fri', compliance: 85 },
-  { day: 'Sat', compliance: 78 },
-  { day: 'Sun', compliance: 72 },
-];
-
-const tensionData = [
-  { day: 'Mon', avg: 30, min: 25, max: 35 },
-  { day: 'Tue', avg: 31, min: 28, max: 34 },
-  { day: 'Wed', avg: 32, min: 29, max: 36 },
-  { day: 'Thu', avg: 30, min: 27, max: 33 },
-  { day: 'Fri', avg: 29, min: 26, max: 32 },
-  { day: 'Sat', avg: 31, min: 28, max: 35 },
-  { day: 'Sun', avg: 30, min: 27, max: 34 },
-];
+import {
+  getWeeklySummary,
+  weeklyComparisonData,
+  weeklyComplianceData,
+  weeklyTensionData,
+} from '@/lib/test-data';
 
 export function WeeklyView() {
+  const weeklySummary = getWeeklySummary();
+
   return (
     <div className="space-y-6">
       <div>
@@ -31,12 +20,12 @@ export function WeeklyView() {
       </div>
 
       <div className="grid grid-cols-2 gap-6">
-        <WeeklyComparison />
+        <WeeklyComparison data={weeklyComparisonData} />
         
         <Card className="p-6">
           <h3 className="font-medium text-[#00487C] mb-4">Daily Compliance Rate</h3>
           <ResponsiveContainer width="100%" height={250}>
-            <LineChart data={complianceData}>
+            <LineChart data={weeklyComplianceData}>
               <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
               <XAxis dataKey="day" />
               <YAxis domain={[0, 100]} />
@@ -57,7 +46,7 @@ export function WeeklyView() {
       <Card className="p-6">
         <h3 className="font-medium text-[#00487C] mb-4">Weekly Tension Trends</h3>
         <ResponsiveContainer width="100%" height={300}>
-          <BarChart data={tensionData}>
+          <BarChart data={weeklyTensionData}>
             <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
             <XAxis dataKey="day" />
             <YAxis label={{ value: 'Tension Level', angle: -90, position: 'insideLeft' }} />
@@ -73,18 +62,20 @@ export function WeeklyView() {
       <div className="grid grid-cols-3 gap-6">
         <Card className="p-6 text-center">
           <p className="text-sm text-[#00487C]/70 mb-2">Total Hours This Week</p>
-          <p className="text-4xl font-bold text-[#00487C]">57.5h</p>
-          <p className="text-sm text-green-600 mt-2">↑ 6.5h from last week</p>
+          <p className="text-4xl font-bold text-[#00487C]">{weeklySummary.totalHours.toFixed(1)}h</p>
+          <p className="text-sm text-green-600 mt-2">
+            ↑ {(weeklySummary.totalHours - weeklySummary.lastWeekTotal).toFixed(1)}h from last week
+          </p>
         </Card>
         <Card className="p-6 text-center">
           <p className="text-sm text-[#00487C]/70 mb-2">Average Daily Wear</p>
-          <p className="text-4xl font-bold text-[#00487C]">8.2h</p>
-          <p className="text-sm text-green-600 mt-2">↑ 12% improvement</p>
+          <p className="text-4xl font-bold text-[#00487C]">{weeklySummary.averageDailyWear.toFixed(1)}h</p>
+          <p className="text-sm text-green-600 mt-2">↑ {weeklySummary.improvement.toFixed(0)}% improvement</p>
         </Card>
         <Card className="p-6 text-center">
           <p className="text-sm text-[#00487C]/70 mb-2">Days Goal Met</p>
-          <p className="text-4xl font-bold text-[#00487C]">5/7</p>
-          <p className="text-sm text-[#00487C]/70 mt-2">71% success rate</p>
+          <p className="text-4xl font-bold text-[#00487C]">{weeklySummary.daysGoalMet}/7</p>
+          <p className="text-sm text-[#00487C]/70 mt-2">{weeklySummary.successRate.toFixed(0)}% success rate</p>
         </Card>
       </div>
     </div>

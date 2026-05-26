@@ -9,125 +9,14 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 
-interface Patient {
-  id: string;
-  name: string;
-  lastSync: string;
-  wearTimeToday: number;
-  wearTimeWeekly: number;
-  avgTension: number;
-  tensionStatus: 'optimal' | 'warning' | 'alert';
-  complianceRate: number;
-  activeAlerts: number;
-  weeklyTrend: 'up' | 'down' | 'stable';
-}
-
-// Mock patient data
-const mockPatients: Patient[] = [
-  {
-    id: 'P-2847',
-    name: 'Sarah Johnson',
-    lastSync: '5 min ago',
-    wearTimeToday: 6.5,
-    wearTimeWeekly: 42.3,
-    avgTension: 85,
-    tensionStatus: 'optimal',
-    complianceRate: 92,
-    activeAlerts: 0,
-    weeklyTrend: 'up',
-  },
-  {
-    id: 'P-3102',
-    name: 'Michael Chen',
-    lastSync: '12 min ago',
-    wearTimeToday: 4.2,
-    wearTimeWeekly: 38.7,
-    avgTension: 92,
-    tensionStatus: 'warning',
-    complianceRate: 78,
-    activeAlerts: 1,
-    weeklyTrend: 'stable',
-  },
-  {
-    id: 'P-2956',
-    name: 'Emily Rodriguez',
-    lastSync: '1 hour ago',
-    wearTimeToday: 7.8,
-    wearTimeWeekly: 51.2,
-    avgTension: 78,
-    tensionStatus: 'optimal',
-    complianceRate: 95,
-    activeAlerts: 0,
-    weeklyTrend: 'up',
-  },
-  {
-    id: 'P-3245',
-    name: 'David Thompson',
-    lastSync: '3 min ago',
-    wearTimeToday: 3.1,
-    wearTimeWeekly: 28.4,
-    avgTension: 105,
-    tensionStatus: 'alert',
-    complianceRate: 65,
-    activeAlerts: 2,
-    weeklyTrend: 'down',
-  },
-  {
-    id: 'P-2789',
-    name: 'Lisa Martinez',
-    lastSync: '8 min ago',
-    wearTimeToday: 5.5,
-    wearTimeWeekly: 44.8,
-    avgTension: 88,
-    tensionStatus: 'optimal',
-    complianceRate: 89,
-    activeAlerts: 0,
-    weeklyTrend: 'stable',
-  },
-  {
-    id: 'P-3421',
-    name: 'James Wilson',
-    lastSync: '25 min ago',
-    wearTimeToday: 2.8,
-    wearTimeWeekly: 32.1,
-    avgTension: 98,
-    tensionStatus: 'warning',
-    complianceRate: 71,
-    activeAlerts: 1,
-    weeklyTrend: 'down',
-  },
-  {
-    id: 'P-2634',
-    name: 'Amanda Foster',
-    lastSync: '2 min ago',
-    wearTimeToday: 8.2,
-    wearTimeWeekly: 55.6,
-    avgTension: 82,
-    tensionStatus: 'optimal',
-    complianceRate: 98,
-    activeAlerts: 0,
-    weeklyTrend: 'up',
-  },
-  {
-    id: 'P-3087',
-    name: 'Robert Kim',
-    lastSync: '45 min ago',
-    wearTimeToday: 4.7,
-    wearTimeWeekly: 36.9,
-    avgTension: 91,
-    tensionStatus: 'warning',
-    complianceRate: 74,
-    activeAlerts: 0,
-    weeklyTrend: 'stable',
-  },
-];
+import { patientTestData, type Patient } from '@/lib/test-data';
 
 export function PatientsView() {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedPatient, setSelectedPatient] = useState<Patient | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
 
-  const filteredPatients = mockPatients.filter(
+  const filteredPatients = patientTestData.filter(
     (patient) =>
       patient.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       patient.id.toLowerCase().includes(searchQuery.toLowerCase())
@@ -161,10 +50,10 @@ export function PatientsView() {
   };
 
   const avgCompliance = Math.round(
-    mockPatients.reduce((sum, p) => sum + p.complianceRate, 0) / mockPatients.length
+    patientTestData.reduce((sum, p) => sum + p.complianceRate, 0) / patientTestData.length
   );
-  const totalAlerts = mockPatients.reduce((sum, p) => sum + p.activeAlerts, 0);
-  const patientsNeedingAttention = mockPatients.filter(
+  const totalAlerts = patientTestData.reduce((sum, p) => sum + p.activeAlerts, 0);
+  const patientsNeedingAttention = patientTestData.filter(
     (p) => p.complianceRate < 80 || p.activeAlerts > 0
   ).length;
 
@@ -182,7 +71,7 @@ export function PatientsView() {
           </CardHeader>
           <CardContent>
             <div className="flex items-center justify-between">
-              <div className="text-3xl font-bold text-[#00487C]">{mockPatients.length}</div>
+              <div className="text-3xl font-bold text-[#00487C]">{patientTestData.length}</div>
               <Users className="w-8 h-8 text-[#0066A1]" />
             </div>
           </CardContent>

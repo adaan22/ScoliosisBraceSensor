@@ -4,28 +4,13 @@ import { Button } from './ui/button';
 import { Lightbulb, CheckCircle2 } from 'lucide-react';
 import { useState } from 'react';
 
-const recommendations = [
-  {
-    id: 1,
-    type: 'tension',
-    message: 'Increase tension by 3 units for optimal support',
-    priority: 'high'
-  },
-  {
-    id: 2,
-    type: 'duration',
-    message: 'Try to wear brace for 10 total hours per day',
-    priority: 'medium'
-  },
-  {
-    id: 3,
-    type: 'consistency',
-    message: 'Great progress! Keep maintaining your current schedule',
-    priority: 'low'
-  }
-];
+import { recommendations as defaultRecommendations, type Recommendation } from '@/lib/test-data';
 
-export function Recommendations() {
+interface RecommendationsProps {
+  recommendations?: Recommendation[];
+}
+
+export function Recommendations({ recommendations = defaultRecommendations }: RecommendationsProps) {
   const [completed, setCompleted] = useState<number[]>([]);
 
   const toggleComplete = (id: number) => {

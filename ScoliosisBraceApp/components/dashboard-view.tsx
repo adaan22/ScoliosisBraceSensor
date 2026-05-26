@@ -10,6 +10,7 @@ import { StatCard } from './stat-card';
 import { TensionMonitor } from './tension-monitor';
 import { createClient } from '@/lib/supabase/client';
 import { parseTensionMessage } from '@/lib/parse-tension-message';
+import { dailyActivityData, dashboardTestData } from '@/lib/test-data';
 
 const TENSION_WS_URL = process.env.NEXT_PUBLIC_TENSION_WS_URL ?? 'ws://192.168.137.193/ws';
 const PERSIST_INTERVAL_MS = 2000;
@@ -115,13 +116,15 @@ export function DashboardView() {
     return total / samples.length;
   }, [samples]);
 
+  const dailyProgress = (dashboardTestData.wearTimeToday / dashboardTestData.dailyWearGoal) * 100;
+
   return (
     <div className="space-y-6">
       <div className="grid grid-cols-4 gap-6">
         <StatCard
           title="Today's Wear Time"
-          value="6.5h"
-          subtitle="of 10h goal"
+          value={`${dashboardTestData.wearTimeToday.toFixed(1)}h`}
+          subtitle={`of ${dashboardTestData.dailyWearGoal}h goal`}
           icon={Clock}
           trend={{ value: '+0.5h from yesterday', positive: true }}
         />
@@ -137,23 +140,23 @@ export function DashboardView() {
         />
         <StatCard
           title="Weekly Average"
-          value="8.2h"
+          value={`${dashboardTestData.weeklyAverageHours.toFixed(1)}h`}
           subtitle="per day"
           icon={TrendingUp}
           trend={{ value: '+12% from last week', positive: true }}
         />
         <StatCard
           title="Compliance Rate"
-          value="95%"
+          value={`${dashboardTestData.complianceRate}%`}
           subtitle="Last 7 days"
           icon={Target}
-          trend={{ value: '+5% improvement', positive: true }}
+          trend={{ value: `${Math.round(dailyProgress)}% of today's goal`, positive: dailyProgress >= 80 }}
         />
       </div>
 
       <div className="grid grid-cols-3 gap-6">
         <div className="col-span-2 space-y-6">
-          <DailySummary />
+          <DailySummary data={dailyActivityData} />
           <Recommendations />
         </div>
         <div className="space-y-6">

@@ -1,19 +1,18 @@
 import { Card } from './ui/card';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
-import { TrendingUp, TrendingDown } from 'lucide-react';
+import { TrendingUp } from 'lucide-react';
 
-const data = [
-  { day: 'Mon', lastWeek: 8.5, thisWeek: 9.2 },
-  { day: 'Tue', lastWeek: 7.8, thisWeek: 9.5 },
-  { day: 'Wed', lastWeek: 9.0, thisWeek: 9.8 },
-  { day: 'Thu', lastWeek: 8.2, thisWeek: 9.0 },
-  { day: 'Fri', lastWeek: 7.5, thisWeek: 8.5 },
-  { day: 'Sat', lastWeek: 6.5, thisWeek: 7.8 },
-  { day: 'Sun', lastWeek: 6.0, thisWeek: 7.2 },
-];
+import { getWeeklySummary, weeklyComparisonData, type WeeklyComparisonPoint } from '@/lib/test-data';
 
-export function WeeklyComparison() {
-  const improvement = 12.5; // percentage improvement
+interface WeeklyComparisonProps {
+  data?: WeeklyComparisonPoint[];
+}
+
+export function WeeklyComparison({ data = weeklyComparisonData }: WeeklyComparisonProps) {
+  const lastWeekTotal = data.reduce((sum, point) => sum + point.lastWeek, 0);
+  const thisWeekTotal = data.reduce((sum, point) => sum + point.thisWeek, 0);
+  const improvement =
+    data === weeklyComparisonData ? getWeeklySummary().improvement : ((thisWeekTotal - lastWeekTotal) / lastWeekTotal) * 100;
 
   return (
     <Card className="p-6">

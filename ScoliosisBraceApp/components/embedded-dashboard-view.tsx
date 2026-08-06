@@ -1,13 +1,6 @@
 'use client';
 
-import { useState } from 'react';
-
-import { DashboardView } from '@/components/dashboard-view';
-import { LogsView } from '@/components/logs-view';
-import { LogoutButton } from '@/components/logout-button';
-import { PatientsView } from '@/components/PatientsView';
-import { Sidebar } from '@/components/sidebar';
-import { WeeklyView } from '@/components/WeeklyView';
+import { DashboardShell } from '@/components/dashboard-shell';
 
 interface EmbeddedDashboardViewProps {
   userName: string;
@@ -16,43 +9,12 @@ interface EmbeddedDashboardViewProps {
 }
 
 export function EmbeddedDashboardView({ userName, userEmail, isAdmin = false }: EmbeddedDashboardViewProps) {
-  const [activeView, setActiveView] = useState(isAdmin ? 'patients' : 'dashboard');
-
-  const renderView = () => {
-    if (isAdmin) {
-      return <PatientsView />;
-    }
-
-    switch (activeView) {
-      case 'dashboard':
-        return <DashboardView />;
-      case 'weekly':
-        return <WeeklyView />;
-      case 'goals':
-        return <DashboardView />;
-      case 'logs':
-        return <LogsView />;
-      case 'settings':
-      default:
-        return <DashboardView />;
-    }
-  };
-
   return (
-    <div className="min-h-[calc(100vh-3.5rem)] bg-white">
-      <Sidebar
-        mode={isAdmin ? 'admin' : 'default'}
-        activeView={activeView}
-        onViewChange={setActiveView}
-        userName={userName}
-        userEmail={userEmail}
-      />
-      <div className="ml-64 p-8">
-        <div className="mb-6 flex justify-end">
-          <LogoutButton />
-        </div>
-        <div className="max-w-[1400px]">{renderView()}</div>
-      </div>
-    </div>
+    <DashboardShell
+      isAdmin={isAdmin}
+      userName={userName}
+      userEmail={userEmail}
+      showLogout
+    />
   );
 }

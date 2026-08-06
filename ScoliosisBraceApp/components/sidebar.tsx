@@ -29,7 +29,7 @@ export function Sidebar({
   const menuItems = mode === 'admin' ? adminMenuItems : defaultMenuItems;
 
   return (
-    <div className="fixed left-0 top-14 flex h-[calc(100vh-3.5rem)] w-64 flex-col bg-[#00487C] p-6 text-white">
+    <div className="fixed left-0 top-14 z-30 flex h-[calc(100vh-3.5rem)] w-64 flex-col bg-[#00487C] p-6 text-white">
       <div className="mb-8">
         <h1 className="text-2xl font-bold">Brace Monitor</h1>
         <p className="text-sm text-white/70 mt-1">

@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Clock, Target, TrendingUp, Zap } from 'lucide-react';
 
 import { ActiveTimer } from './active-timer';
@@ -12,7 +12,7 @@ import { createClient } from '@/lib/supabase/client';
 import { parseTensionMessage } from '@/lib/parse-tension-message';
 import { dailyActivityData, dashboardTestData } from '@/lib/test-data';
 
-const TENSION_WS_URL = process.env.NEXT_PUBLIC_TENSION_WS_URL ?? 'ws://192.168.137.193/ws';
+const TENSION_WS_URL = process.env.NEXT_PUBLIC_TENSION_WS_URL ?? 'ws://192.168.137.20/ws';
 const PERSIST_INTERVAL_MS = 2000;
 
 async function saveTensionReading(time: string, tensionValue: number) {
@@ -22,6 +22,7 @@ async function saveTensionReading(time: string, tensionValue: number) {
   } = await supabase.auth.getSession();
 
   if (!session?.access_token) {
+    console.error('Failed to save tension reading: no active session');
     return;
   }
 
@@ -41,7 +42,8 @@ async function saveTensionReading(time: string, tensionValue: number) {
 }
 
 export function DashboardView() {
-  const [samples, setSamples] = useState<number[]>([]);
+  const [currentReading, setCurrentReading] = useState<number | null>(null);
+  const [sampleCount, setSampleCount] = useState(0);
   const [isConnected, setIsConnected] = useState(false);
   const lastPersistAt = useRef(0);
 
@@ -70,10 +72,8 @@ export function DashboardView() {
           return;
         }
 
-        setSamples((prev) => {
-          const next = [...prev, parsed.tensionValue];
-          return next.length > 200 ? next.slice(next.length - 200) : next;
-        });
+        setCurrentReading(parsed.tensionValue);
+        setSampleCount((count) => count + 1);
 
         const now = Date.now();
         if (now - lastPersistAt.current >= PERSIST_INTERVAL_MS) {
@@ -108,13 +108,7 @@ export function DashboardView() {
     };
   }, []);
 
-  const averageTension = useMemo(() => {
-    if (samples.length === 0) {
-      return 32;
-    }
-    const total = samples.reduce((sum, value) => sum + value, 0);
-    return total / samples.length;
-  }, [samples]);
+  const displayReading = currentReading ?? 0;
 
   const dailyProgress = (dashboardTestData.wearTimeToday / dashboardTestData.dailyWearGoal) * 100;
 
@@ -130,11 +124,13 @@ export function DashboardView() {
         />
         <StatCard
           title="Current Tension"
-          value={averageTension.toFixed(1)}
+          value={currentReading === null ? '—' : String(currentReading)}
           subtitle={
-            samples.length > 0
-              ? `Live avg · ${samples.length} samples (saved to your account)`
-              : 'Waiting for live feed — sign in to save readings'
+            currentReading !== null
+              ? `Live reading · ${sampleCount} received (saved to your account)`
+              : isConnected
+                ? 'Connected — waiting for readings…'
+                : 'Connecting to sensor WebSocket…'
           }
           icon={Zap}
         />
@@ -162,9 +158,10 @@ export function DashboardView() {
         <div className="space-y-6">
           <ActiveTimer />
           <TensionMonitor
-            currentTension={averageTension}
-            sampleCount={samples.length}
+            currentTension={displayReading}
+            sampleCount={sampleCount}
             isConnected={isConnected}
+            hasReading={currentReading !== null}
           />
         </div>
       </div>

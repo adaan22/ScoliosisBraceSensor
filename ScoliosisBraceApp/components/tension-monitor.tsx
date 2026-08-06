@@ -6,9 +6,15 @@ interface TensionMonitorProps {
   currentTension: number;
   sampleCount: number;
   isConnected: boolean;
+  hasReading?: boolean;
 }
 
-export function TensionMonitor({ currentTension, sampleCount, isConnected }: TensionMonitorProps) {
+export function TensionMonitor({
+  currentTension,
+  sampleCount,
+  isConnected,
+  hasReading = true,
+}: TensionMonitorProps) {
   const recommendedMin = 25;
   const recommendedMax = 35;
   const isInRange = currentTension >= recommendedMin && currentTension <= recommendedMax;
@@ -31,10 +37,12 @@ export function TensionMonitor({ currentTension, sampleCount, isConnected }: Ten
 
       <div className="space-y-4">
         <div className="text-center py-4">
-          <p className="text-5xl font-bold text-[#00487C]">{currentTension.toFixed(1)}</p>
-          <p className="text-sm text-[#00487C]/60 mt-1">Average Tension</p>
+          <p className="text-5xl font-bold text-[#00487C]">
+            {hasReading ? currentTension : '—'}
+          </p>
+          <p className="text-sm text-[#00487C]/60 mt-1">Reading</p>
           <p className="text-xs text-[#00487C]/50 mt-1">
-            {isConnected ? 'Live feed connected' : 'Waiting for live feed'} - {sampleCount} samples
+            {isConnected ? 'Live feed connected' : 'Waiting for live feed'} - {sampleCount} received
           </p>
         </div>
 

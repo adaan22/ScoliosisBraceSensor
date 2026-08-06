@@ -1,3 +1,4 @@
+import argparse
 import asyncio
 import json
 import os
@@ -9,18 +10,16 @@ import websockets
 from dotenv import load_dotenv
 from supabase import create_client
 
-ESP32_WS = os.getenv("ESP32_WS_URL", "ws://10.104.243.147/ws")
+ESP32_WS = os.getenv("ESP32_WS_URL", "ws://192.168.137.20/ws")
 
 _ENV_PATH = Path(__file__).resolve().parent.parent / ".env.local"
 
 
 def load_env() -> None:
-    """Reload .env.local on every run so edits apply without restarting the shell."""
     load_dotenv(_ENV_PATH, override=True)
 
 
 def env(name: str, fallback: str | None = None) -> str | None:
-    """Read env var; strip optional surrounding quotes from .env values."""
     value = os.getenv(name, fallback)
     if value is None:
         return None
@@ -30,60 +29,32 @@ def env(name: str, fallback: str | None = None) -> str | None:
     return value or None
 
 
-def get_supabase():
+def get_supabase(access_token: str):
     load_env()
 
-    url = env("SUPABASE_URL") or env("NEXT_PUBLIC_SUPABASE_URL")
-    key = (
-        env("SUPABASE_ANON_KEY")
-        or env("NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY")
-    )
+    url = env("NEXT_PUBLIC_SUPABASE_URL")
+    key = env("NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY")
 
     if not url or not key:
-        raise RuntimeError(
-            "Missing Supabase URL/key in .env.local. Set SUPABASE_URL (or "
-            "NEXT_PUBLIC_SUPABASE_URL) and SUPABASE_ANON_KEY (or "
-            "NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY)."
-        )
-
-    if "<project-ref>" in url:
-        raise RuntimeError(
-            "SUPABASE_URL still looks like a placeholder. Use your real project URL "
-            "(e.g. https://nnetwtchhusovmgiwcue.supabase.co)."
-        )
+        raise RuntimeError("Missing NEXT_PUBLIC_SUPABASE_URL or NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY in .env.local")
 
     supabase = create_client(url, key)
+    supabase.auth.set_session(access_token, access_token)
 
-    access_token = env("SUPABASE_ACCESS_TOKEN")
-    refresh_token = env("SUPABASE_REFRESH_TOKEN") or ""
-
-    if access_token:
-        supabase.auth.set_session(access_token, refresh_token or access_token)
-    else:
-        email = env("SUPABASE_USER_EMAIL")
-        password = env("SUPABASE_USER_PASSWORD")
-        if not email or not password:
-            raise RuntimeError(
-                "Set SUPABASE_USER_EMAIL and SUPABASE_USER_PASSWORD in .env.local, "
-                "or set SUPABASE_ACCESS_TOKEN for token-based auth."
-            )
-        if "example.com" in email or password == "super-secret-password":
-            raise RuntimeError(
-                "SUPABASE_USER_EMAIL/PASSWORD still look like placeholders. "
-                "Use the real Supabase Auth user for this device."
-            )
-
-        auth_res = supabase.auth.sign_in_with_password(
-            {"email": email, "password": password}
-        )
-        if not auth_res.session:
-            raise RuntimeError("Supabase sign-in failed: no session returned")
-        supabase.auth.set_session(
-            auth_res.session.access_token,
-            auth_res.session.refresh_token,
-        )
+    user = supabase.auth.get_user()
+    if not user or not user.user:
+        raise RuntimeError("Invalid or expired access token.")
 
     return supabase
+
+
+def normalize_esp32_json(msg: str) -> str:
+    """Quote unquoted ISO timestamps so json.loads succeeds."""
+    return re.sub(
+        r'("Time"\s*:\s*)(\d{4}-\d{2}-\d{2}T[0-9:+.\-Zz]+)',
+        r'\1"\2"',
+        msg,
+    )
 
 
 def parse_reading_message(
@@ -92,7 +63,7 @@ def parse_reading_message(
 ) -> tuple[datetime, float] | None:
     """Parse ESP32 JSON; return (reading_time, average_tension) or None."""
     try:
-        data = json.loads(msg)
+        data = json.loads(normalize_esp32_json(msg))
     except json.JSONDecodeError:
         return None
 
@@ -100,25 +71,41 @@ def parse_reading_message(
         return None
 
     time_raw = data.get("Time")
-    readings: list[float] = []
-    for key, value in data.items():
-        if re.match(r"^Reading\s*\d+$", str(key), re.IGNORECASE):
-            try:
-                readings.append(float(value))
-            except (TypeError, ValueError):
-                pass
 
-    if not readings:
-        return None
+    # Preferred format: {"Reading": N}
+    tension_value: float | None = None
+    if "Reading" in data:
+        try:
+            tension_value = float(data["Reading"])
+        except (TypeError, ValueError):
+            return None
+    else:
+        readings: list[float] = []
+        for key, value in data.items():
+            if re.match(r"^Reading\s*\d+$", str(key), re.IGNORECASE):
+                try:
+                    readings.append(float(value))
+                except (TypeError, ValueError):
+                    pass
+        if not readings:
+            return None
+        tension_value = sum(readings) / len(readings)
 
-    avg_tension = sum(readings) / len(readings)
+    avg_tension = tension_value
 
-    # Device "Time": Unix seconds, or seconds since WebSocket session start
+    # Device "Time": Unix seconds, seconds since session start, or ISO string
     if isinstance(time_raw, (int, float)):
         if time_raw >= 1_000_000_000:
             reading_time = datetime.fromtimestamp(time_raw, tz=timezone.utc)
         else:
             reading_time = session_start + timedelta(seconds=float(time_raw))
+    elif isinstance(time_raw, str) and time_raw.strip():
+        try:
+            reading_time = datetime.fromisoformat(time_raw)
+            if reading_time.tzinfo is None:
+                reading_time = reading_time.replace(tzinfo=timezone.utc)
+        except ValueError:
+            reading_time = datetime.now(timezone.utc)
     else:
         reading_time = datetime.now(timezone.utc)
 
@@ -190,20 +177,58 @@ async def test_ws(supabase):
         print("Error:", e)
 
 
+EXAMPLE_JSON = '{"Time":2026-07-29T19:00:00-06:00, "Reading":42}'
+
+
+def test_static_json(supabase) -> None:
+    """Parse the example JSON, get the authenticated user ID, and upload to Supabase."""
+    print(f"Input JSON: {EXAMPLE_JSON}\n")
+
+    session_start = datetime.now(timezone.utc)
+    parsed = parse_reading_message(EXAMPLE_JSON, session_start)
+
+    if parsed is None:
+        print("Failed to parse JSON.")
+        return
+
+    reading_time, avg_tension = parsed
+    print(f"Parsed → time={reading_time.isoformat()}, avg_tension={avg_tension:.2f}")
+
+    user = supabase.auth.get_user()
+    if not user or not user.user:
+        print("Not authenticated.")
+        return
+
+    user_id = user.user.id
+    print(f"Authenticated user ID: {user_id}\n")
+
+    res = add_tension_reading(supabase, reading_time, avg_tension)
+    print(f"Inserted: {res.data}\n")
+
+
 async def main():
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--token", required=True, help="Supabase JWT access token for the authenticated user")
+    parser.add_argument("--ws", action="store_true", help="Stream live readings from the ESP32 WebSocket")
+    args = parser.parse_args()
+
     load_env()
-    supabase = get_supabase()
+    supabase = get_supabase(args.token)
+
     user = supabase.auth.get_user()
     if user and user.user:
-        print(f"Supabase user: {user.user.id}\n")
+        print(f"Authenticated as user: {user.user.id}\n")
 
-    task = asyncio.create_task(test_ws(supabase))
-    try:
-        await task
-    except KeyboardInterrupt:
-        print("\nStopping test...")
-        task.cancel()
-        await asyncio.sleep(0.1)
+    if args.ws:
+        task = asyncio.create_task(test_ws(supabase))
+        try:
+            await task
+        except KeyboardInterrupt:
+            print("\nStopping test...")
+            task.cancel()
+            await asyncio.sleep(0.1)
+    else:
+        test_static_json(supabase)
 
 
 if __name__ == "__main__":
